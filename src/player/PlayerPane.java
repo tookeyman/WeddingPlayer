@@ -9,7 +9,7 @@ import javafx.scene.layout.Pane;
 
 import java.io.File;
 
-public class PlayerPane extends Pane {
+class PlayerPane extends Pane {
     private Button prev = new Button("Previous");
     private Button play = new Button("Play");
     private Button stop = new Button("Stop");
@@ -17,14 +17,17 @@ public class PlayerPane extends Pane {
     private Button mute = new Button("Mute");
 
     private Label volumeLabel = new Label();
+    private Label trackNameLabel = new Label();
+    private Label trackProgressLabel = new Label();
 
-    private Slider volume = new Slider();
+    private Slider volumeSlider = new Slider();
+    private Slider progressSlider = new Slider();
 
     private boolean muted = false;
 
-    private MediaManager manager = new MediaManager(volume.valueProperty());
+    private MediaManager manager = new MediaManager(volumeSlider.valueProperty(), progressSlider.valueProperty(), progressSlider.maxProperty());
 
-    public PlayerPane() {
+    PlayerPane() {
         prev.setOnAction(evt -> manager.previous());
         play.setOnAction(evt -> manager.play());
         stop.setOnAction(evt -> manager.stop());
@@ -43,21 +46,33 @@ public class PlayerPane extends Pane {
         stop.layoutXProperty().bind(play.layoutXProperty().add(play.widthProperty()));
         next.layoutXProperty().bind(stop.layoutXProperty().add(stop.widthProperty()));
         mute.layoutXProperty().bind(next.layoutXProperty().add(next.widthProperty()));
-        volume.layoutYProperty().bind(play.layoutYProperty().add(play.heightProperty()).add(15.0));
-        volume.minWidthProperty().bindBidirectional(volume.maxWidthProperty());
-        volume.maxWidthProperty().bind(mute.layoutXProperty().add(mute.widthProperty()));
-        volume.setValue(1.0);
-        volume.setMin(0);
-        volume.setMax(1.0);
 
-        volumeLabel.layoutXProperty().bind(volume.layoutXProperty().add(volume.widthProperty()).add(15.0));
-        volumeLabel.layoutYProperty().bind(volume.layoutYProperty());
-        volumeLabel.textProperty().bind(Bindings.createStringBinding(() -> String.format("%.2f%%", volume.getValue() * 100.0), volume.valueProperty()));
 
-        getChildren().addAll(prev, play, stop, next, mute, volume, volumeLabel);
+        volumeSlider.layoutYProperty().bind(play.layoutYProperty().add(play.heightProperty()).add(15.0));
+        volumeSlider.minWidthProperty().bindBidirectional(volumeSlider.maxWidthProperty());
+        volumeSlider.maxWidthProperty().bind(mute.layoutXProperty().add(mute.widthProperty()));
+        volumeSlider.setValue(1.0);
+        volumeSlider.setMin(0);
+        volumeSlider.setMax(1.0);
+
+        volumeLabel.layoutXProperty().bind(volumeSlider.layoutXProperty().add(volumeSlider.widthProperty()).add(15.0));
+        volumeLabel.layoutYProperty().bind(volumeSlider.layoutYProperty());
+        volumeLabel.textProperty().bind(Bindings.createStringBinding(() -> String.format("%.2f%%", volumeSlider.getValue() * 100.0), volumeSlider.valueProperty()));
+
+        trackNameLabel.layoutYProperty().bind(volumeLabel.layoutYProperty().add(volumeLabel.heightProperty()));
+        trackNameLabel.textProperty().bind(manager.trackNameProperty());
+
+        progressSlider.layoutYProperty().bind(trackNameLabel.layoutYProperty().add(trackNameLabel.heightProperty()));
+        progressSlider.layoutXProperty().bind(volumeSlider.layoutXProperty());
+
+        progressSlider.setMin(0);
+        progressSlider.minWidthProperty().bind(progressSlider.maxWidthProperty());
+        progressSlider.maxWidthProperty().bind(progressSlider.widthProperty());
+
+        getChildren().addAll(prev, play, stop, next, mute, volumeSlider, volumeLabel, trackNameLabel, trackProgressLabel, progressSlider);
     }
 
-    public void close() {
+    void close() {
         manager.close();
     }
 

@@ -2,13 +2,10 @@ package player;
 
 import javafx.animation.Interpolator;
 import javafx.application.Platform;
-import javafx.beans.property.DoubleProperty;
-import javafx.beans.property.SimpleDoubleProperty;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
+import javafx.beans.property.*;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
-import javafx.scene.media.Track;
+import javafx.util.Duration;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -25,6 +22,10 @@ public class MediaManager {
 
     private StringProperty trackName = new SimpleStringProperty("");
     private DoubleProperty volume;
+    private DoubleProperty playProgress;
+    private DoubleProperty playDuration;
+    private BooleanProperty sliderDrag = new SimpleBooleanProperty(false);
+
 
     private Interpolator lerp = Interpolator.EASE_IN;
 
@@ -32,20 +33,28 @@ public class MediaManager {
 
     private int currentTrackIdx = -1;
 
-    public MediaManager(DoubleProperty volume) {
+    MediaManager(DoubleProperty volume, DoubleProperty playProgress, DoubleProperty playDuration) {
         this.volume = volume;
+        this.playProgress = playProgress;
+        this.playDuration = playDuration;
+        playProgress.addListener((obs, old, newVal)->{
+            if(!sliderDrag.get() || player == null) return;
+            player.setStartTime(new Duration((long)newVal.doubleValue()*60000));
+            play();
+        });
     }
 
-    public void close() {
+    void close() {
         threadPool.shutdown();
         try {
             threadPool.awaitTermination(1, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+        System.out.println("Threadpool closed");
     }
 
-    public Macro createFadeMacro(double start, double end, long duration) {
+    private Macro createFadeMacro(double start, double end, long duration) {
         return new Macro(() -> {
             long f = System.currentTimeMillis() + duration;
             long c = 0;
@@ -62,7 +71,7 @@ public class MediaManager {
         });
     }
 
-    public void addFile(File f) {
+    private void addFile(File f) {
         if (loadedFiles.contains(f)) return;
         loadedFiles.add(f);
         if (currentTrackIdx == -1) {
@@ -70,7 +79,15 @@ public class MediaManager {
         }
     }
 
-    public void addDir(File f) {
+    public StringProperty trackNameProperty() {
+        return trackName;
+    }
+
+    public BooleanProperty sliderDragProperty() {
+        return sliderDrag;
+    }
+
+    void addDir(File f) {
         if (!Files.isDirectory(f.toPath())) return;
         File[] children = f.listFiles();
         assert children != null;
@@ -79,14 +96,14 @@ public class MediaManager {
         }
     }
 
-    public void previous() {
+    void previous() {
         if (currentTrackIdx == 0) return;
         currentTrackIdx -= 1;
         loadSongAtIndex(currentTrackIdx);
         play();
     }
 
-    public void play() {
+    void play() {
         if (currentlyPlaying == null) loadSongAtIndex(0);
         threadPool.submit(player::play);
     }
@@ -104,26 +121,31 @@ public class MediaManager {
         player = new MediaPlayer(currentlyPlaying);
         player.volumeProperty().bindBidirectional(volume);
         player.setOnEndOfMedia(player::stop);
+        player.currentTimeProperty().addListener((obs, old, newVal) -> {
+            Platform.runLater(() -> playProgress.setValue(newVal.toSeconds()));
+        });
+        playDuration.setValue(player.getStopTime().toSeconds());
+        Platform.runLater(() -> trackName.set("Now Playing: " + loadedFiles.get(idx).getName()));
     }
 
-    public void next() {
+    void next() {
         if (loadedFiles.size() - 1 == currentTrackIdx) return;
         currentTrackIdx += 1;
         loadSongAtIndex(currentTrackIdx);
         play();
     }
 
-    public void stop() {
+    void stop() {
         Macro m = createFadeMacro(volume.getValue(), 0, 5000);
         m.add(() -> player.stop());
         threadPool.submit(m);
     }
 
-    public void mute() {
+    void mute() {
         player.setVolume(0);
     }
 
-    public void unMute() {
+    void unMute() {
         player.setVolume(1);
     }
 }
