@@ -13,6 +13,7 @@ public class PlayerApp extends Application {
         Scene s = new Scene(p, 500, 150);
         primaryStage.setScene(s);
         primaryStage.setOnCloseRequest(evt->{
+            p.close();
             Platform.exit();
             System.exit(0);
         });
