@@ -42,12 +42,14 @@ class PlayerPane extends Pane {
 
     PlayerPane() {
         prev.setOnAction(evt -> {
+            manager.setCancelFade(true);
             manager.stop();
             manager.previous();
         });
         play.setOnAction(evt -> manager.play());
         stop.setOnAction(evt -> manager.stop());
         next.setOnAction(evt -> {
+            manager.setCancelFade(true);
             manager.stop();
             manager.next();
         });
@@ -172,11 +174,15 @@ class PlayerPane extends Pane {
     }
 
     private File chooseDirectory() {
-        return chooseDirectory(Paths.get("/Users/david").toFile());
+        String home = System.getProperty("user.home");
+        System.out.println(home);
+        return chooseDirectory(Paths.get(home).toFile());
     }
 
     private File chooseFile(FileChooser.ExtensionFilter... filters) {
-        return chooseFile(Paths.get("/Users/david").toFile(), filters);
+        String home = System.getProperty("user.home");
+        System.out.println(home);
+        return chooseFile(Paths.get(home).toFile(), filters);
     }
 
     private DoubleBinding totalButtonWidth() {

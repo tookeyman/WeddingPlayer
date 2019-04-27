@@ -32,6 +32,7 @@ public class MediaManager {
     private final BooleanProperty fadeIn = new SimpleBooleanProperty();
     private final BooleanProperty fadeOut = new SimpleBooleanProperty();
     private BooleanProperty dragging;
+    private final BooleanProperty cancelFade = new SimpleBooleanProperty(false);
 
 
     private Interpolator lerp = Interpolator.EASE_IN;
@@ -86,6 +87,10 @@ public class MediaManager {
             long f = System.currentTimeMillis() + duration;
             long c = 0;
             while (c < f) {
+                if (cancelFade.get()) {
+                    Platform.runLater(() -> player.setVolume(start));
+                    return;
+                }
                 c = System.currentTimeMillis();
                 double frac = ((double) f - (double) c) / (double) duration;
                 Platform.runLater(() -> player.setVolume(lerp.interpolate(end, start, frac)));
@@ -122,9 +127,7 @@ public class MediaManager {
             addFile(file);
         }
         loadedFiles.sort(Comparator.comparing(File::getName));
-        for (File af : loadedFiles) {
-            System.out.println("Loaded: " + af);
-        }
+        Platform.runLater(() -> loadSongAtIndex(0));
     }
 
     void previous() {
@@ -134,6 +137,7 @@ public class MediaManager {
     }
 
     void play() {
+        setCancelFade(false);
         if (fadeIn.get()) {
             player.setVolume(0.0);
             Macro m = new Macro(player::play);
@@ -147,8 +151,10 @@ public class MediaManager {
     void stop() {
         dragging.set(false);
         if (fadeOut.get()) {
+            double v = player.getVolume();
             Macro m = createFadeMacro(volume.getValue(), 0, fadeDuration.get());
             m.add(player::stop);
+            m.add(() -> player.setVolume(v));
             threadPool.submit(m);
         } else {
             threadPool.submit(player::stop);
@@ -156,12 +162,11 @@ public class MediaManager {
     }
 
     void next() {
-        if (currentTrackIdx + 1 == loadedFiles.size()) {
-            System.out.printf("Attempted to access index %d of %d\n", currentTrackIdx, loadedFiles.size());
+        if (currentTrackIdx == loadedFiles.size()) {
+            System.out.printf("Attempted to access index %d of %d\n%s\n", currentTrackIdx, loadedFiles.size(), loadedFiles);
             return;
         }
-        currentTrackIdx += 1;
-        loadSongAtIndex(currentTrackIdx);
+        loadSongAtIndex(currentTrackIdx++);
     }
 
     void mute() {
@@ -169,7 +174,10 @@ public class MediaManager {
     }
 
     private void loadSongAtIndex(int idx) {
-        if (loadedFiles.size() - 1 < idx || loadedFiles.size() - 1 == idx) return;
+        if (idx >= loadedFiles.size() || idx <= -1) {
+            System.out.println("attempting to access out of bounds index " + idx);
+            return;
+        }
         if (currentlyPlaying != null) {
             if (player.getStatus() == MediaPlayer.Status.PLAYING || player.getStatus() == MediaPlayer.Status.PAUSED)
                 player.stop();
@@ -190,6 +198,10 @@ public class MediaManager {
         player.setOnReady(() -> playDuration.setValue(player.getTotalDuration().toSeconds()));
 
         Platform.runLater(() -> trackName.set("Now Playing: " + loadedFiles.get(idx).getName()));
+    }
+
+    public void setCancelFade(boolean b) {
+        this.cancelFade.set(b);
     }
 
     public void startPlaybackFrom(double startInSeconds) {
