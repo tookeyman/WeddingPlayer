@@ -11,33 +11,40 @@ import javafx.stage.DirectoryChooser;
 
 import java.io.File;
 import java.nio.file.Paths;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 class PlayerPane extends Pane {
-    private Button prev = new Button("Previous");
-    private Button play = new Button("Play");
-    private Button stop = new Button("Stop");
-    private Button next = new Button("Next");
-    private Button mute = new Button("Mute");
+    private final Button prev = new Button("Previous");
+    private final Button play = new Button("Play");
+    private final Button stop = new Button("Stop");
+    private final Button next = new Button("Next");
+    private final Button mute = new Button("Mute");
 
-    private Label volumeLevelLabel = new Label();
-    private Label volumeLabel = new Label("Volume:");
-    private Label progressLabel = new Label("Progress:");
-    private Label trackNameLabel = new Label();
-    private Label trackProgressLabel = new Label();
+    private final Label volumeLevelLabel = new Label();
+    private final Label volumeLabel = new Label("Volume:");
+    private final Label progressLabel = new Label("Progress:");
+    private final Label trackNameLabel = new Label();
+    private final Label trackProgressLabel = new Label();
+    private final Label fadeDurationLabel = new Label();
 
-    private Slider volumeSlider = new Slider();
-    private Slider progressSlider = new Slider();
+    private final Slider volumeSlider = new Slider();
+    private final Slider progressSlider = new Slider();
 
     private boolean muted = false;
 
-    private MenuBar menuBar = new MenuBar();
+    private final MenuBar menuBar = new MenuBar();
 
-    private CheckBox fadeIn = new CheckBox("Fade In");
-    private CheckBox fadeOut = new CheckBox("Fade Out");
+    private final TextField fadeDurationField = new TextField("5000");
+
+    private final CheckBox fadeIn = new CheckBox("Fade In");
+    private final CheckBox fadeOut = new CheckBox("Fade Out");
 
     private final BooleanProperty dragStarted = new SimpleBooleanProperty(false);
 
-    private MediaManager manager = new MediaManager(volumeSlider.valueProperty(), progressSlider.valueProperty(), progressSlider.maxProperty());
+    private final MediaManager manager = new MediaManager(volumeSlider.valueProperty(), progressSlider.valueProperty(), progressSlider.maxProperty());
+
+    private static final Pattern numberOnly = Pattern.compile("^\\d+$");
 
     PlayerPane() {
         prev.setOnAction(evt -> {
@@ -77,6 +84,15 @@ class PlayerPane extends Pane {
             manager.startPlaybackFrom(startTime);
         });
 
+        fadeDurationLabel.textProperty().bind(manager.fadeProperty().asString());
+        fadeDurationField.setOnAction(evt->{
+            String value = fadeDurationField.getText();
+            Matcher m = numberOnly.matcher(value);
+            if(m.find()){
+                long l = Long.parseLong(value);
+                manager.fadeProperty().setValue(l);
+            }
+        });
 
         Platform.runLater(this::init);
     }
@@ -111,8 +127,6 @@ class PlayerPane extends Pane {
         trackNameLabel.layoutXProperty().bind(widthProperty().divide(2.0).subtract(trackNameLabel.widthProperty().divide(2.0)));
         trackNameLabel.textProperty().bind(manager.trackNameProperty());
 
-
-
         volumeLabel.layoutYProperty().bind(trackNameLabel.layoutYProperty().add(trackNameLabel.heightProperty()).add(15.0));
         volumeLabel.layoutXProperty().bind(volumeSlider.layoutXProperty());
         volumeSlider.layoutYProperty().bind(volumeLabel.layoutYProperty().add(volumeLabel.heightProperty()));
@@ -135,11 +149,21 @@ class PlayerPane extends Pane {
         progressSlider.layoutYProperty().bind(progressLabel.layoutYProperty().add(progressLabel.heightProperty()));
         progressSlider.layoutXProperty().bind(volumeSlider.layoutXProperty());
 
+        fadeDurationField.minWidthProperty().bind(fadeDurationField.maxWidthProperty());
+        fadeDurationField.setMaxWidth(100);
+        fadeDurationField.layoutYProperty().bind(prev.layoutYProperty());
+        fadeDurationField.layoutXProperty().bind(prev.layoutXProperty().subtract(fadeDurationField.widthProperty()).subtract(15.0));
+
+
+        fadeDurationLabel.layoutXProperty().bind(fadeDurationField.layoutXProperty());
+        fadeDurationLabel.layoutYProperty().bind(fadeDurationField.layoutYProperty().add(fadeDurationLabel.heightProperty()).add(10));
+
+
         progressSlider.setMin(0);
         progressSlider.minWidthProperty().bind(progressSlider.maxWidthProperty());
         progressSlider.maxWidthProperty().bind(volumeSlider.widthProperty());
 
-        getChildren().addAll(menuBar, prev, play, stop, next, mute, volumeSlider, volumeLevelLabel, trackNameLabel, trackProgressLabel, progressSlider, fadeIn, fadeOut, volumeLabel, progressLabel);
+        getChildren().addAll(menuBar, prev, play, stop, next, mute, volumeSlider, volumeLevelLabel, trackNameLabel, trackProgressLabel, progressSlider, fadeIn, fadeOut, volumeLabel, progressLabel, fadeDurationField, fadeDurationLabel);
     }
 
     private File chooseDirectory(File startingDir) {

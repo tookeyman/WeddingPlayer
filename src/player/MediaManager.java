@@ -21,10 +21,10 @@ class MediaManager {
 
     private final ExecutorService threadPool = Executors.newCachedThreadPool();
 
-    private StringProperty trackName = new SimpleStringProperty("");
-    private DoubleProperty volume;
-    private DoubleProperty playProgress;
-    private DoubleProperty playDuration;
+    private final StringProperty trackName = new SimpleStringProperty("");
+    private final DoubleProperty volume;
+    private final DoubleProperty playProgress;
+    private final DoubleProperty playDuration;
 
     private final LongProperty fadeDuration = new SimpleLongProperty(5000);
 
@@ -34,7 +34,7 @@ class MediaManager {
     private final BooleanProperty cancelFade = new SimpleBooleanProperty(false);
 
 
-    private Interpolator lerp = Interpolator.EASE_IN;
+    private final Interpolator lerp = Interpolator.EASE_IN;
 
     private LinkedList<File> loadedFiles = new LinkedList<>();
 
@@ -46,6 +46,10 @@ class MediaManager {
         this.playDuration = playDuration;
     }
 
+    public LongProperty fadeProperty(){
+        return fadeDuration;
+    }
+
     void close() {
         threadPool.shutdown();
         try {
@@ -53,7 +57,7 @@ class MediaManager {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        System.out.println("Threadpool closed");
+        System.out.println("ThreadPool closed");
     }
 
     void clear() {
@@ -149,7 +153,7 @@ class MediaManager {
             double v = player.getVolume();
             Macro m = createFadeMacro(volume.getValue(), 0, fadeDuration.get());
             m.add(player::stop);
-            m.add(() -> player.setVolume(v));
+            m.add(() -> Platform.runLater(()->player.setVolume(v)));
             threadPool.submit(m);
         } else {
             threadPool.submit(player::stop);

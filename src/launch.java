@@ -1,7 +1,7 @@
 import javafx.application.Application;
 import player.PlayerApp;
 
-public class launch {
+class launch {
     public static void main(String... args) {
         Thread t = new Thread(() -> Application.launch(PlayerApp.class));
 

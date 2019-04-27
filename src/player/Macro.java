@@ -2,7 +2,7 @@ package player;
 
 import java.util.LinkedList;
 
-public class Macro implements Runnable {
+class Macro implements Runnable {
     private final LinkedList<Runnable> todo = new LinkedList<>();
 
     Macro(Runnable runnable) {
