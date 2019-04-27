@@ -8,7 +8,6 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.scene.control.*;
 import javafx.scene.layout.Pane;
 import javafx.stage.DirectoryChooser;
-import javafx.stage.FileChooser;
 
 import java.io.File;
 import java.nio.file.Paths;
@@ -65,17 +64,11 @@ class PlayerPane extends Pane {
         menuBar.getMenus().addAll(fileMenu);
         fileMenu.getItems().addAll(openDir);
 
-        progressSlider.setOnDragDetected(evt -> {
-            dragStarted.set(true);
-        });
+        progressSlider.setOnDragDetected(evt -> dragStarted.set(true));
 
-        progressSlider.setOnMousePressed(evt->{
-            dragStarted.set(true);
-        });
+        progressSlider.setOnMousePressed(evt-> dragStarted.set(true));
 
-        progressSlider.valueProperty().addListener((obs, old, newVal) -> {
-            updateTrackProgressLabel();
-        });
+        progressSlider.valueProperty().addListener((obs, old, newVal) -> updateTrackProgressLabel());
 
         progressSlider.setOnMouseReleased(evt->{
             if (!dragStarted.get()) return;
@@ -88,7 +81,7 @@ class PlayerPane extends Pane {
         Platform.runLater(this::init);
     }
 
-    void updateTrackProgressLabel(){
+    private void updateTrackProgressLabel(){
         trackProgressLabel.setText(String.format("%.2f/%.2fm", progressSlider.valueProperty().get()/60.0,progressSlider.getMax()/60.0));
     }
 
@@ -149,16 +142,6 @@ class PlayerPane extends Pane {
         getChildren().addAll(menuBar, prev, play, stop, next, mute, volumeSlider, volumeLevelLabel, trackNameLabel, trackProgressLabel, progressSlider, fadeIn, fadeOut, volumeLabel, progressLabel);
     }
 
-    private File chooseFile(File startingDir, FileChooser.ExtensionFilter... filters) {
-        FileChooser fc = new FileChooser();
-        for (FileChooser.ExtensionFilter ef : filters) {
-            fc.getExtensionFilters().add(ef);
-        }
-        fc.setInitialDirectory(startingDir);
-        File f = fc.showOpenDialog(this.getScene().getWindow());
-        return f;
-    }
-
     private File chooseDirectory(File startingDir) {
         DirectoryChooser dc = new DirectoryChooser();
         dc.setInitialDirectory(startingDir);
@@ -177,12 +160,6 @@ class PlayerPane extends Pane {
         String home = System.getProperty("user.home");
         System.out.println(home);
         return chooseDirectory(Paths.get(home).toFile());
-    }
-
-    private File chooseFile(FileChooser.ExtensionFilter... filters) {
-        String home = System.getProperty("user.home");
-        System.out.println(home);
-        return chooseFile(Paths.get(home).toFile(), filters);
     }
 
     private DoubleBinding totalButtonWidth() {

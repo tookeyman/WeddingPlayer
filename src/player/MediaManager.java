@@ -15,7 +15,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-public class MediaManager {
+class MediaManager {
     private Media currentlyPlaying = null;
     private MediaPlayer player = null;
 
@@ -28,7 +28,6 @@ public class MediaManager {
 
     private final LongProperty fadeDuration = new SimpleLongProperty(5000);
 
-    private BooleanProperty sliderDrag = new SimpleBooleanProperty(false);
     private final BooleanProperty fadeIn = new SimpleBooleanProperty();
     private final BooleanProperty fadeOut = new SimpleBooleanProperty();
     private BooleanProperty dragging;
@@ -64,18 +63,18 @@ public class MediaManager {
         player = null;
     }
 
-    public void setDragging(BooleanProperty b) {
+    void setDragging(BooleanProperty b) {
         this.dragging = b;
     }
 
-    public void bindFadeIn(BooleanProperty b) {
+    void bindFadeIn(BooleanProperty b) {
         if (fadeIn.isBound()) {
             fadeIn.unbind();
         }
         fadeIn.bind(b);
     }
 
-    public void bindFadeOut(BooleanProperty b) {
+    void bindFadeOut(BooleanProperty b) {
         if (fadeOut.isBound()) {
             fadeOut.unbind();
         }
@@ -111,12 +110,8 @@ public class MediaManager {
         }
     }
 
-    public StringProperty trackNameProperty() {
+    StringProperty trackNameProperty() {
         return trackName;
-    }
-
-    public BooleanProperty sliderDragProperty() {
-        return sliderDrag;
     }
 
     void addDir(File f) {
@@ -200,11 +195,11 @@ public class MediaManager {
         Platform.runLater(() -> trackName.set("Now Playing: " + loadedFiles.get(idx).getName()));
     }
 
-    public void setCancelFade(boolean b) {
+    void setCancelFade(boolean b) {
         this.cancelFade.set(b);
     }
 
-    public void startPlaybackFrom(double startInSeconds) {
+    void startPlaybackFrom(double startInSeconds) {
         stop();
         player.setStartTime(new Duration(startInSeconds * 1000.0));
         player.play();
